@@ -363,13 +363,10 @@ class MetabaseAPI():
         if dashboard.get('created_at') : dashboard.pop('created_at')
         if dashboard.get('updated_at') : dashboard.pop('updated_at')
 
-        #if dashboard.get('dashcards') :  
-            #dashboard['ordered_cards'] = dashboard.pop('dashcards')
-            #dashcards = dashboard['dashcards']
-            #dashboard['dashcards'] = [ dashcards[2] ]
+        if dashboard.get('tabs') :
+            for tab in dashboard['tabs'] :
+                tab.pop('entity_id')
 
-        #_dashcards = copy.copy(dashboard.get("dashcards") or [])
-        
         for label in ['param_values', 'entity_id', 'last-edit-info'] :
             if dashboard.get(label):
                 dashboard.pop(label,None)
@@ -385,30 +382,6 @@ class MetabaseAPI():
 
         logger.debug(f"TYPE={type}, URL={URL}, DATA={dashboard}, HEADERS={headers}")
 
-
-        ## Afficher la requête de manière lisible
-        #print("################################################################")
-        #print("Request:")
-        #print(f"URL: {URL}")
-        #print("Headers:")
-        #print(json.dumps(headers, indent=4))
-        #print("Json:")
-        ##print(json.dumps(dashboard, indent=4))
-        #print(dashboard)
-        ## Afficher la réponse de manière lisible
-        #print("\nResponse:")
-        #print(f"Status Code: {req.status_code}")
-        #try:
-        #    response_json = req.json()
-        #    print("Response JSON:")
-        #    print(json.dumps(response_json, indent=4))
-        #except Exception as e :
-        #    print("Response Text:")
-        #    print(req.text)
-        #print("################################################################")
-
-
-
         if req.status_code == 200 : 
 
             new_id = req.json().get('id') 
@@ -416,7 +389,7 @@ class MetabaseAPI():
             
             # Vérification : 
             if len( fresh_dashboard.get('dashcards') or [] ) == 0 :
-                logger.warning(f"🟠 WARN - Le dashboard récemment ajouté ({new_id}) est vide !")
+                logger.warning(f"🟠 WARN - KO EMPTY - Le dashboard récemment ajouté ({new_id}) est vide !")
                 raise Exception(f"🟠 WARN - Importation du dashboard '{dashboard_name}' - KO EMPTY : {req.text}") 
 
             if existing_id:
@@ -685,7 +658,6 @@ class Comparator():
                             if not new_int_id : 
                                 raise Exception(f"MISSING-TABLE - Cette question dépend d'une table inconnue ({value})") 
                             new_id = f"card__{ convert_card_id(old_card_id) }"
-                            #print(f"POUET : value={value} / new_id={new_id}")
                         
                         elif not isinstance(value, int|str):
                             #print(f"On essaie de transformer un truc bizarre --> {key}:{value}, on le laisse comme ça.")
@@ -812,32 +784,32 @@ class Comparator():
                         #break
                         continue
 
-        for collection_id, collection in self.metabases_instances[src_database_name]['collections'].items() : 
-            dashboards = self.metabases_instances[src_database_name]['collections'][collection_id].get('dashboards') or {}
-            
-            dashboards_count = dashboards_count + len(dashboards.items())
-            
-            for dashboard_id, dashboard in dashboards.items() :
-                try :
-                    dashboard = self.convert_dashboard(src_database_name, dashboard, trg_database_name)
-                    self.metabases_instances[trg_database_name]['instance'].import_dashboard(dashboard)
-                    self.reload_if_needed(trg_database_name)
-                    dashboards_migrated_count = dashboards_migrated_count + 1
-                except Exception as e :
-                    if "EMPTY" in str(e) :
-                        dashboard_is_empty = dashboard_is_empty + 1
-                        if dashboard_is_empty < 2 :
-                            need_retry = True
+            for collection_id, collection in self.metabases_instances[src_database_name]['collections'].items() : 
+                dashboards = self.metabases_instances[src_database_name]['collections'][collection_id].get('dashboards') or {}
+                
+                dashboards_count = dashboards_count + len(dashboards.items())
+                
+                for dashboard_id, dashboard in dashboards.items() :
+                    try :
+                        dashboard = self.convert_dashboard(src_database_name, dashboard, trg_database_name)
+                        self.metabases_instances[trg_database_name]['instance'].import_dashboard(dashboard)
+                        self.reload_if_needed(trg_database_name)
+                        dashboards_migrated_count = dashboards_migrated_count + 1
+                    except Exception as e :
+                        if "EMPTY" in str(e) :
+                            dashboard_is_empty = dashboard_is_empty + 1
+                            if dashboard_is_empty < 2 :
+                                need_retry = True
+                            else :
+                                logger.error(f"Deux fois que le dashboard est vide, on n'insiste pas.")
+                        elif "MISSING-TABLE" in str(e) :
+                            need_retry = True    
                         else :
-                            logger.error(f"Deux fois que le dashboard est vide, on n'insiste pas.")
-                    elif "MISSING-TABLE" in str(e) :
-                        need_retry = True    
-                    else :
-                        logger.debug(f"DEBUG : avant conversion : {dashboard}")
-                        logger.debug(traceback.format_exc())
-                        logger.warning(f"🟠 WARN - Impossible de migrer le dashboard {dashboard_id} : {e}")
-                        break
-                    continue
+                            logger.debug(f"DEBUG : avant conversion : {dashboard}")
+                            logger.debug(traceback.format_exc())
+                            logger.warning(f"🟠 WARN - Impossible de migrer le dashboard {dashboard_id} : {e}")
+                            break
+                        continue
 
         logger.info(f"{collections_migrated_count} collections migrées sur {collections_count}")
         logger.info(f"{cards_migrated_count} cards migrées sur {cards_count}")
