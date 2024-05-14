@@ -1,0 +1,22 @@
+{   
+    "db_names" : ["xxxxxx"],
+    "instances" : {
+        "A" : {
+            "URL" : "http://x.x.x.x:xxxx",
+            "LOGIN" : "xxxxx",
+            "PASSWORD" : "xxxxxx"
+        },
+        "B" : {
+            "URL" : "http://xxxx:xxxx",
+            "LOGIN" : "xxxxxxx",
+            "PASSWORD" : "xxxxxx"
+        }
+    },
+    "patterns" : { 
+        "__PSYCAJOUR_URL__" : 
+            {
+                "A" : "aaaaaaaaaaa",
+                "B" : "bbbbbbbbbbb"
+            }
+    }
+}
