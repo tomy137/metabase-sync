@@ -44,5 +44,9 @@ In one of the questions, I used =concat('__pattern__', 'another thing') because 
 
 ## TODO
 ⏹️ Clean up the code, as it's more of a big Hack than a neat solution right now.
+
 ⏹️ Check if there are any elements on the targets that are no longer needed and remove them.
+
+⏹️ Add a real translating to this README.md, ChatGPT did this one ! 🤡
+
 ⏹️ Any ideas?
