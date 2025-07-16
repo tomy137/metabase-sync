@@ -4,7 +4,7 @@ from functools import lru_cache, partial
 
 from loguru import logger
 logger.remove()
-logger.add(sys.stderr, level="INFO")
+logger.add(sys.stderr, level="DEBUG")
 
 new_level = logger.level("FLAG", no=38, color="<yellow>", icon="🚩")
 
@@ -29,7 +29,11 @@ def main()->None:
         my_comparator.add_instance(api)
     
     #### ADD HERE YOUR LINES AS REQUIRED :
-    #my_comparator.sync_collections_from_to("A", "B")
+    my_comparator.print_structures("LOCAL")
+    #my_comparator.sync_collections_from_to("LOCAL", "DDEC44")
+    #my_comparator.sync_collections_from_to("LOCAL", "DDEC22")
+    my_comparator.sync_collections_from_to("LOCAL", "DDEC56")
+    #my_comparator.sync_collections_from_to("LOCAL", "DDEC35")
     #my_comparator.sync_collections_from_to("A", "C")
 
 
@@ -611,6 +615,8 @@ class Comparator():
         if _data['id'] : 
             _data['old_id'] = _data['id']
             _data['id']=self.get_card_id(src_database_name,_data['id'], trg_database_name)
+        #if _data.get('result_metadata') : _data.pop("result_metadata") # Verrue pour éviter bug à l'importation.
+
         self._convert_card(src_database_name, _data, trg_database_name)
         return _data
     
@@ -620,6 +626,9 @@ class Comparator():
         if _data['id'] : 
             _data['old_id'] = _data['id']
             _data['id']=self.get_dashboard_id(src_database_name,_data['id'], trg_database_name)
+
+        #if _data.get('result_metadata') : _data.pop("result_metadata") # Verrue pour éviter bug à l'importation.
+
         self._convert_card(src_database_name, _data, trg_database_name)
         return _data        
 
@@ -811,9 +820,9 @@ class Comparator():
                             break
                         continue
 
-        logger.info(f"{collections_migrated_count} collections migrées sur {collections_count}")
-        logger.info(f"{cards_migrated_count} cards migrées sur {cards_count}")
-        logger.info(f"{dashboards_migrated_count} dashboards migrées sur {dashboards_count}")
+        logger.info(f"[{trg_database_name}] {collections_migrated_count} collections migrées sur {collections_count}")
+        logger.info(f"[{trg_database_name}] {cards_migrated_count} cards migrées sur {cards_count}")
+        logger.info(f"[{trg_database_name}] {dashboards_migrated_count} dashboards migrées sur {dashboards_count}")
         
     def print_structures(self, master_instance_name):
         headers = ["Type","Nom"]
@@ -826,9 +835,13 @@ class Comparator():
 
         orderred_other_instances_names = [master_instance_name]+other_instances_names
 
+        self.refresh_instance(master_instance_name)
+
         for instance_name in orderred_other_instances_names :
             headers.append(f"{instance_name}_id")
-        
+            self.refresh_instance(instance_name)
+            
+
         tab = PrettyTable(headers)
 
         for db_id in self.metabases_instances[master_instance_name]['databases'].keys():
